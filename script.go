@@ -113,7 +113,7 @@ func uploadAppboy() {
 func retrieveCampaignData() {
   	campaignURL := "https://rest.iad-01.braze.com/campaigns/data_series"
     appGroupId := os.Getenv("CM_BRAZE_GROUP_ID")
-    campaignId := "97c9cf06-c9ea-47c5-9cae-f046961b95c9"
+    campaignId := ""
     dataUrl := fmt.Sprintf("%s?app_group_id=%s&campaign_id=%s&length=%s", campaignURL, appGroupId, campaignId, "14")
 
     fmt.Println(dataUrl)
