@@ -7,6 +7,8 @@ import (
     "strings"
      "path/filepath"
      "os"
+     "net/http"
+     "bytes"
 )
 // this is a comment
 
@@ -68,6 +70,74 @@ func processSpreadsheet(excelName string) {
       panic(err)
     }
   }
+}
+
+func uploadAppboy() {
+    /*
+    {
+      "app_id": (required, string) see App Identifier above,
+      "subject": (optional, string),
+      "from": (required, valid email address in the format "Display Name <email@address.com>"),
+      "reply_to": (optional, valid email address in the format "email@address.com" - defaults to your app group's default reply to if not set),
+      "body": (required unless email_template_id is given, valid HTML),
+      "plaintext_body": (optional, valid plaintext, defaults to autogenerating plaintext from "body" when this is not set),
+      "preheader"*: (optional, string) Recommended length 50-100 characters.
+      "email_template_id": (optional, string) If provided, we will use the subject/body values from the given email template UNLESS they are specified here, in which case we will override the provided template,
+      "message_variation_id": (optional, string) used when providing a campaign_id to specify which message variation this message should be tracked under,
+      "extras": (optional, valid Key Value Hash), extra hash - for SendGrid customers, this will be passed to SendGrid as Unique Arguments,
+      "headers": (optional, valid Key Value Hash), hash of custom extensions headers. Currently, only supported for SendGrid customers
+    }
+    */
+
+    url := "http://restapi3.apiary.io/notes"
+    fmt.Println("URL:>", url)
+
+    var jsonStr = []byte(`{"title":"Buy cheese and bread for breakfast."}`)
+    req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))
+    req.Header.Set("X-Custom-Header", "myvalue")
+    req.Header.Set("Content-Type", "application/json")
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        panic(err)
+    }
+    defer resp.Body.Close()
+
+    fmt.Println("response Status:", resp.Status)
+    fmt.Println("response Headers:", resp.Header)
+    body, _ := ioutil.ReadAll(resp.Body)
+    fmt.Println("response Body:", string(body))
+}
+
+func retrieveCampaignData() {
+  	campaignURL := "https://rest.iad-01.braze.com/campaigns/data_series"
+    appGroupId := os.Getenv("CM_BRAZE_GROUP_ID")
+    campaignId := "97c9cf06-c9ea-47c5-9cae-f046961b95c9"
+    dataUrl := fmt.Sprintf("%s?app_group_id=%s&campaign_id=%s&length=%s", campaignURL, appGroupId, campaignId, "14")
+
+    fmt.Println(dataUrl)
+    /*
+    app_group_id	Yes	String	App Group API Identifier
+    campaign_id	Yes	String	Campaign API Identifier
+    length	Yes	Integer	Max number of days before ending_at to include in the returned series - must be between 1 and 100 inclusive
+    ending_at	No	DateTime (ISO 8601 string)	Date on which the data series should end - defaults to time of the request
+    */
+
+    req, err := http.NewRequest("GET", dataUrl, nil)
+    req.Header.Set("Content-Type", "application/json")
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        panic(err)
+    }
+    defer resp.Body.Close()
+
+    fmt.Println("response Status:", resp.Status)
+    fmt.Println("response Headers:", resp.Header)
+    body, _ := ioutil.ReadAll(resp.Body)
+    fmt.Println("response Body:", string(body))
 }
 
 func main() {
