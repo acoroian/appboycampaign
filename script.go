@@ -9,6 +9,7 @@ import (
      "os"
      "net/http"
      "bytes"
+     "encoding/json"
 )
 // this is a comment
 
@@ -72,6 +73,14 @@ func processSpreadsheet(excelName string) {
   }
 }
 
+type Message struct {
+  AppId string `json:"app_id"`
+  Subject string `json:"subject"`
+  From string `json:"from"`
+  Reply string `json:"reply_to"`
+  Body string `json:"body"`
+}
+
 func uploadAppboy() {
     /*
     {
@@ -89,12 +98,15 @@ func uploadAppboy() {
     }
     */
 
-    url := "http://restapi3.apiary.io/notes"
+    url := "https://rest.iad-01.braze.com/messages/schedule/create"
     fmt.Println("URL:>", url)
 
-    var jsonStr = []byte(`{"title":"Buy cheese and bread for breakfast."}`)
-    req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))
-    req.Header.Set("X-Custom-Header", "myvalue")
+    jsonObject := Message{os.Getenv("CM_BRAZE_GROUP_ID"), "SUBJECT", "test@test.com", "test@test.com", "<b>htmlshouldbehere</b>"}
+    stringObject, err := json.Marshal(jsonObject)
+
+    fmt.Println("parameters", string(stringObject), err)
+
+    req, err := http.NewRequest("POST", url, bytes.NewBuffer(stringObject))
     req.Header.Set("Content-Type", "application/json")
 
     client := &http.Client{}
@@ -141,14 +153,15 @@ func retrieveCampaignData() {
 }
 
 func main() {
+    // uploadAppboy()
+    // //get all spreadhseets
+    // var spreadsheets []string = getSpreadsheets()
+    //
+    // //process all spreadsheets
+    // for _, spreadsheet := range spreadsheets {
+    //   processSpreadsheet(spreadsheet)
+    // }
 
-    //get all spreadhseets
-    var spreadsheets []string = getSpreadsheets()
-
-    //process all spreadsheets
-    for _, spreadsheet := range spreadsheets {
-      processSpreadsheet(spreadsheet)
-    }
-
+    retrieveCampaignData()
     //upload to appboy
 }
