@@ -32,14 +32,9 @@ func getSpreadsheets() []string {
 }
 
 func processSpreadsheet(excelName string) {
-  filename := excelName[0:len(excelName)-5]
-  htmlFilename := []string{ filename,".html" }
-  htmlFilenameString := strings.Join(htmlFilename, "")
-
-  htmlTemplate, err := ioutil.ReadFile(htmlFilenameString) // just pass the file name
-  if err != nil {
-      fmt.Print(err)
-  }
+  // filename := excelName[0:len(excelName)-5]
+  // htmlFilename := []string{ filename,".html" }
+  // htmlFilenameString := strings.Join(htmlFilename, "")
 
   xlFile, err := xlsx.OpenFile(excelName)
   if err != nil {
@@ -47,61 +42,107 @@ func processSpreadsheet(excelName string) {
   }
 
   sheet := xlFile.Sheets[0]
-  keys := sheet.Rows[0].Cells
+  sites := sheet.Rows[3].Cells
 
-  os.MkdirAll(filename, os.ModePerm)
+  // os.MkdirAll(filename, os.ModePerm)
 
-  for _, row := range sheet.Rows[1:] {
+  for _, row := range sheet.Rows[4:] {
 
-    htmlString := string(htmlTemplate)
-    lastCellIndex := len(row.Cells)-1
+    //this is the template file name we are going to be looking for
+    //open the html template one at a time and create the outputs
+    templateName := ""
+    htmlTemplate := ""
+    templateContent := make(map[string]string)
 
-    htmlFilename := []string{ filename,"/",row.Cells[lastCellIndex].String(),".html" }
-    htmlFilenameString := strings.Join(htmlFilename, "")
+    if(len(row.Cells[0].String()) > 0 && len(row.Cells[1].String()) == 0) {
+      //write output if any exists then get the next template
+      if( len(templateName) > 0 ) {
+        os.MkdirAll(templateName, os.ModePerm)
 
-    for index, cell := range row.Cells {
-        templateKey := []string{ "[[[",keys[index].String(),"]]]" }
+        for index, cell:= range sites.Rows[4:] {
+          htmlFilename := []string{ templateName,"/",cell.String(),".html" }
+          htmlFilenameString := strings.Join(htmlFilename, "")
+
+          err = ioutil.WriteFile(htmlFilenameString, []byte( templateContent[cell.String()] ), 0644)
+          if err != nil {
+            panic(err)
+          }
+        }
+      }
+
+      //get all the html templates setup
+      templateName = row.Cells[0].String()
+      htmlTemplate, err := ioutil.ReadFile(htmlFilenameString) // just pass the file name
+      if err != nil {
+          fmt.Print(err)
+      }
+
+      //get all the html templates setup
+      for index, cell := range sites[3:] {
+        templateContent[cell.String()] := string(htmlTemplate)
+      }
+    } else {
+      elementKey := row.Cells[1]
+
+      for index, cell := range row.Cells[3:] {
+        templateKey := []string{ "[[[",elementKey.String(),"]]]" }
         templateString := strings.Join(templateKey, "")
 
-        htmlString = strings.Replace(htmlString, templateString , cell.String(), -1)
+        templateContent[sites[index].String()] = strings.Replace(templateContent[sites[index].String()], templateString, cell.String(), -1)
+      }
     }
 
-    err = ioutil.WriteFile(htmlFilenameString, []byte(htmlString), 0644)
-    if err != nil {
-      panic(err)
-    }
+    // htmlString := string(htmlTemplate)
+    // lastCellIndex := len(row.Cells)-1
+    //
+    // htmlFilename := []string{ filename,"/",row.Cells[lastCellIndex].String(),".html" }
+    // htmlFilenameString := strings.Join(htmlFilename, "")
+    //
+    // for index, cell := range row.Cells {
+    //     templateKey := []string{ "[[[",keys[index].String(),"]]]" }
+    //     templateString := strings.Join(templateKey, "")
+    //
+    //     htmlString = strings.Replace(htmlString, templateString , cell.String(), -1)
+    // }
+
+    // err = ioutil.WriteFile(htmlFilenameString, []byte(htmlString), 0644)
+    // if err != nil {
+    //   panic(err)
+    // }
   }
 }
 
+type Schedule struct {
+  Time string `json:"time"`
+}
+
+type Email struct {
+    AppId string `json:"app_id"`
+    Subject string `json:"subject"`
+    From string `json:"from"`
+    ReplyTo string `json:"reply_to"`
+    Body string `json:"body"`
+  }
+
+type Messages struct {
+  Email Email `json:"email"`
+}
+
 type Message struct {
-  AppId string `json:"app_id"`
-  Subject string `json:"subject"`
-  From string `json:"from"`
-  Reply string `json:"reply_to"`
-  Body string `json:"body"`
+  AppId string `json:"app_group_id"`
+  SegmentId string `json:"segment_id"`
+  Broadcast bool `json:"broadcast"`
+  Schedule Schedule `json:"schedule"`
+  Messages Messages `json:"messages"`
 }
 
 func uploadAppboy() {
-    /*
-    {
-      "app_id": (required, string) see App Identifier above,
-      "subject": (optional, string),
-      "from": (required, valid email address in the format "Display Name <email@address.com>"),
-      "reply_to": (optional, valid email address in the format "email@address.com" - defaults to your app group's default reply to if not set),
-      "body": (required unless email_template_id is given, valid HTML),
-      "plaintext_body": (optional, valid plaintext, defaults to autogenerating plaintext from "body" when this is not set),
-      "preheader"*: (optional, string) Recommended length 50-100 characters.
-      "email_template_id": (optional, string) If provided, we will use the subject/body values from the given email template UNLESS they are specified here, in which case we will override the provided template,
-      "message_variation_id": (optional, string) used when providing a campaign_id to specify which message variation this message should be tracked under,
-      "extras": (optional, valid Key Value Hash), extra hash - for SendGrid customers, this will be passed to SendGrid as Unique Arguments,
-      "headers": (optional, valid Key Value Hash), hash of custom extensions headers. Currently, only supported for SendGrid customers
-    }
-    */
-
     url := "https://rest.iad-01.braze.com/messages/schedule/create"
     fmt.Println("URL:>", url)
 
-    jsonObject := Message{os.Getenv("CM_BRAZE_GROUP_ID"), "SUBJECT", "test@test.com", "test@test.com", "<b>htmlshouldbehere</b>"}
+    timeToSend := "2019-01-01T09:25:25Z"
+
+    jsonObject := Message{"5609dd9b-11b9-443d-a592-4c8e094677c3", "8dab634a-d644-445d-b8bf-0abceb630b7c", true, Schedule{ timeToSend }, Messages{Email{"e7502059-597c-4d14-bf39-eebfa035a24c", "subject test", "test@test.com", "test@test.com", "<b>htmlshouldbehere</b>"}}}
     stringObject, err := json.Marshal(jsonObject)
 
     fmt.Println("parameters", string(stringObject), err)
@@ -162,6 +203,7 @@ func main() {
     //   processSpreadsheet(spreadsheet)
     // }
 
-    retrieveCampaignData()
+    // retrieveCampaignData()
     //upload to appboy
+    uploadAppboy()
 }
