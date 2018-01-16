@@ -38,32 +38,34 @@ func processSpreadsheet(excelName string) {
 
   xlFile, err := xlsx.OpenFile(excelName)
   if err != nil {
-      fmt.Printf("error")
+      fmt.Printf("Error: %s", err)
   }
 
   sheet := xlFile.Sheets[0]
-  sites := sheet.Rows[3].Cells
+  sites := sheet.Rows[2].Cells
 
   // os.MkdirAll(filename, os.ModePerm)
 
   for _, row := range sheet.Rows[4:] {
-
     //this is the template file name we are going to be looking for
     //open the html template one at a time and create the outputs
     templateName := ""
-    htmlTemplate := ""
     templateContent := make(map[string]string)
+
+    // fmt.Println(row)
 
     if(len(row.Cells[0].String()) > 0 && len(row.Cells[1].String()) == 0) {
       //write output if any exists then get the next template
       if( len(templateName) > 0 ) {
+        fmt.Println("Template", templateContent)
         os.MkdirAll(templateName, os.ModePerm)
 
-        for index, cell:= range sites.Rows[4:] {
+        for _, cell := range sites[4:] {
+          fmt.Println(cell.String())
           htmlFilename := []string{ templateName,"/",cell.String(),".html" }
-          htmlFilenameString := strings.Join(htmlFilename, "")
+          htmlPath := strings.Join(htmlFilename, "")
 
-          err = ioutil.WriteFile(htmlFilenameString, []byte( templateContent[cell.String()] ), 0644)
+          err = ioutil.WriteFile(htmlPath, []byte( templateContent[cell.String()] ), 0644)
           if err != nil {
             panic(err)
           }
@@ -72,22 +74,31 @@ func processSpreadsheet(excelName string) {
 
       //get all the html templates setup
       templateName = row.Cells[0].String()
-      htmlTemplate, err := ioutil.ReadFile(htmlFilenameString) // just pass the file name
+      fmt.Println(templateName)
+
+      htmlTemplateFile := fmt.Sprintf("%s.html", templateName)
+      htmlTemplate, err := ioutil.ReadFile(htmlTemplateFile) // just pass the file name
       if err != nil {
-          fmt.Print(err)
+          fmt.Printf("Error %s", err)
       }
 
       //get all the html templates setup
-      for index, cell := range sites[3:] {
-        templateContent[cell.String()] := string(htmlTemplate)
+      for _, cell := range sites[3:] {
+        templateContent[cell.String()] = string(htmlTemplate)
+        fmt.Println(cell.String(), templateContent)
       }
     } else {
       elementKey := row.Cells[1]
 
       for index, cell := range row.Cells[3:] {
+        if(len(elementKey.String()) == 0) {
+          continue
+        }
+
         templateKey := []string{ "[[[",elementKey.String(),"]]]" }
         templateString := strings.Join(templateKey, "")
 
+        fmt.Println(templateString)
         templateContent[sites[index].String()] = strings.Replace(templateContent[sites[index].String()], templateString, cell.String(), -1)
       }
     }
@@ -194,6 +205,7 @@ func retrieveCampaignData() {
 }
 
 func main() {
+    processSpreadsheet("template.xlsx")
     // uploadAppboy()
     // //get all spreadhseets
     // var spreadsheets []string = getSpreadsheets()
@@ -205,5 +217,5 @@ func main() {
 
     // retrieveCampaignData()
     //upload to appboy
-    uploadAppboy()
+    // uploadAppboy()
 }
