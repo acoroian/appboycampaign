@@ -11,30 +11,9 @@ import (
      "bytes"
      "encoding/json"
 )
-// this is a comment
-
-func getSpreadsheets() []string {
-
-  var spreadsheets []string
-
-  err := filepath.Walk("./", func(path string, info os.FileInfo, err error) error {
-      if filepath.Ext(path) != ".xlsx" {
-        return nil
-      }
-      spreadsheets = append(spreadsheets, path)
-      return nil
-  })
-  if err != nil {
-      panic(err)
-  }
-
-  return spreadsheets
-}
 
 func processSpreadsheet(excelName string) {
-  // filename := excelName[0:len(excelName)-5]
-  // htmlFilename := []string{ filename,".html" }
-  // htmlFilenameString := strings.Join(htmlFilename, "")
+
   HEADER_INDEX := 2
   ROW_INDEX_START := 3
   COLUMN_INDEX_DATA = :2
@@ -109,28 +88,8 @@ func processSpreadsheet(excelName string) {
         siteIndex := index + COLUMN_INDEX_DATA
 
         templateContent[sites[siteIndex].String()] = strings.Replace(templateContent[sites[siteIndex].String()], templateString, cell.String(), -1)
-
-        // fmt.Println(templateContent)
       }
     }
-
-    // htmlString := string(htmlTemplate)
-    // lastCellIndex := len(row.Cells)-1
-    //
-    // htmlFilename := []string{ filename,"/",row.Cells[lastCellIndex].String(),".html" }
-    // htmlFilenameString := strings.Join(htmlFilename, "")
-    //
-    // for index, cell := range row.Cells {
-    //     templateKey := []string{ "[[[",keys[index].String(),"]]]" }
-    //     templateString := strings.Join(templateKey, "")
-    //
-    //     htmlString = strings.Replace(htmlString, templateString , cell.String(), -1)
-    // }
-
-    // err = ioutil.WriteFile(htmlFilenameString, []byte(htmlString), 0644)
-    // if err != nil {
-    //   panic(err)
-    // }
   }
 }
 
