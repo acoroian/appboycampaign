@@ -35,6 +35,9 @@ func processSpreadsheet(excelName string) {
   // filename := excelName[0:len(excelName)-5]
   // htmlFilename := []string{ filename,".html" }
   // htmlFilenameString := strings.Join(htmlFilename, "")
+  HEADER_INDEX := 2
+  ROW_INDEX_START := 3
+  COLUMN_INDEX_DATA = :2
 
   xlFile, err := xlsx.OpenFile(excelName)
   if err != nil {
@@ -42,13 +45,13 @@ func processSpreadsheet(excelName string) {
   }
 
   sheet := xlFile.Sheets[0]
-  sites := sheet.Rows[2].Cells
+  sites := sheet.Rows[HEADER_INDEX].Cells
 
   // os.MkdirAll(filename, os.ModePerm)
   templateName := ""
   templateContent := make(map[string]string)
 
-  for _, row := range sheet.Rows[3:] {
+  for _, row := range sheet.Rows[ROW_INDEX_START:] {
     //this is the template file name we are going to be looking for
     //open the html template one at a time and create the outputs
 
@@ -61,7 +64,7 @@ func processSpreadsheet(excelName string) {
       if( len(templateName) > 0 ) {
         os.MkdirAll(templateName, os.ModePerm)
 
-        for _, cell := range sites[4:] {
+        for _, cell := range sites[COLUMN_INDEX_DATA:] {
           htmlFilename := []string{ templateName,"/",cell.String(),".html" }
           htmlPath := strings.Join(htmlFilename, "")
 
@@ -84,7 +87,7 @@ func processSpreadsheet(excelName string) {
       }
 
       //get all the html templates setup
-      for _, cell := range sites[3:] {
+      for _, cell := range sites[COLUMN_INDEX_DATA:] {
         // fmt.Println(cell.String())
         templateContent[cell.String()] = string(htmlTemplate)
       }
@@ -96,14 +99,14 @@ func processSpreadsheet(excelName string) {
 
       elementKey := row.Cells[1]
 
-      for index, cell := range row.Cells[3:] {
+      for index, cell := range row.Cells[COLUMN_INDEX_DATA:] {
         if(len(elementKey.String()) == 0 || len(cell.String()) == 0) {
           continue
         }
 
         templateKey := []string{ "[[",elementKey.String(),"]]" }
         templateString := strings.Join(templateKey, "")
-        siteIndex := index + 3
+        siteIndex := index + COLUMN_INDEX_DATA
 
         templateContent[sites[siteIndex].String()] = strings.Replace(templateContent[sites[siteIndex].String()], templateString, cell.String(), -1)
 
