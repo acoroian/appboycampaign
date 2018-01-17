@@ -45,23 +45,23 @@ func processSpreadsheet(excelName string) {
   sites := sheet.Rows[2].Cells
 
   // os.MkdirAll(filename, os.ModePerm)
+  templateName := ""
+  templateContent := make(map[string]string)
 
-  for _, row := range sheet.Rows[4:] {
+  for _, row := range sheet.Rows[3:] {
     //this is the template file name we are going to be looking for
     //open the html template one at a time and create the outputs
-    templateName := ""
-    templateContent := make(map[string]string)
 
+    if(len(row.Cells[0].String()) == 0 && len(row.Cells[1].String()) == 0) {
+      continue
+    }
     // fmt.Println(row)
-
     if(len(row.Cells[0].String()) > 0 && len(row.Cells[1].String()) == 0) {
       //write output if any exists then get the next template
       if( len(templateName) > 0 ) {
-        fmt.Println("Template", templateContent)
         os.MkdirAll(templateName, os.ModePerm)
 
         for _, cell := range sites[4:] {
-          fmt.Println(cell.String())
           htmlFilename := []string{ templateName,"/",cell.String(),".html" }
           htmlPath := strings.Join(htmlFilename, "")
 
@@ -74,32 +74,40 @@ func processSpreadsheet(excelName string) {
 
       //get all the html templates setup
       templateName = row.Cells[0].String()
-      fmt.Println(templateName)
+      templateContent = make(map[string]string)
 
       htmlTemplateFile := fmt.Sprintf("%s.html", templateName)
       htmlTemplate, err := ioutil.ReadFile(htmlTemplateFile) // just pass the file name
       if err != nil {
           fmt.Printf("Error %s", err)
+          continue
       }
 
       //get all the html templates setup
       for _, cell := range sites[3:] {
+        // fmt.Println(cell.String())
         templateContent[cell.String()] = string(htmlTemplate)
-        fmt.Println(cell.String(), templateContent)
       }
     } else {
+
+      if(len(templateContent) == 0) {
+        continue
+      }
+
       elementKey := row.Cells[1]
 
       for index, cell := range row.Cells[3:] {
-        if(len(elementKey.String()) == 0) {
+        if(len(elementKey.String()) == 0 || len(cell.String()) == 0) {
           continue
         }
 
-        templateKey := []string{ "[[[",elementKey.String(),"]]]" }
+        templateKey := []string{ "[[",elementKey.String(),"]]" }
         templateString := strings.Join(templateKey, "")
+        siteIndex := index + 3
 
-        fmt.Println(templateString)
-        templateContent[sites[index].String()] = strings.Replace(templateContent[sites[index].String()], templateString, cell.String(), -1)
+        templateContent[sites[siteIndex].String()] = strings.Replace(templateContent[sites[siteIndex].String()], templateString, cell.String(), -1)
+
+        // fmt.Println(templateContent)
       }
     }
 
