@@ -5,7 +5,6 @@ import (
     "github.com/tealeg/xlsx"
     "io/ioutil"
     "strings"
-     "path/filepath"
      "os"
      "net/http"
      "bytes"
@@ -16,7 +15,7 @@ func processSpreadsheet(excelName string) {
 
   HEADER_INDEX := 2
   ROW_INDEX_START := 3
-  COLUMN_INDEX_DATA = :2
+  COLUMN_INDEX_DATA := 2
 
   xlFile, err := xlsx.OpenFile(excelName)
   if err != nil {
@@ -176,6 +175,7 @@ func retrieveCampaignData() {
 
 func main() {
     processSpreadsheet("template.xlsx")
+    // retrieveCampaignData()
     // uploadAppboy()
     // //get all spreadhseets
     // var spreadsheets []string = getSpreadsheets()
